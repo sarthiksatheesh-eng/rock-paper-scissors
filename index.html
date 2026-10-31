@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rock Paper Scissors – A Python-Based Interactive Game</title>
+<style>
+:root{--bg:#f3f1fb;--surface:#ffffff;--ink:#1c1b3a;--muted:#5d5b7d;--line:#dcd9ef;
+--rock:#2f7f79;--paper:#e8b730;--scis:#e0455f;--accent:#4b3fd6;--code:#1c1b3a;--codefg:#e9e7ff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13122b;--surface:#1e1d3f;--ink:#f1efff;--muted:#a9a6d0;--line:#37356a;--rock:#4fc2b8;--paper:#f2c94c;--scis:#ff6b85;--accent:#9a90ff;--code:#0c0b1f;--codefg:#e9e7ff}}
+:root[data-theme="dark"]{--bg:#13122b;--surface:#1e1d3f;--ink:#f1efff;--muted:#a9a6d0;--line:#37356a;--rock:#4fc2b8;--paper:#f2c94c;--scis:#ff6b85;--accent:#9a90ff;--code:#0c0b1f;--codefg:#e9e7ff}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-rounded,"Avenir Next","Trebuchet MS",system-ui,sans-serif;line-height:1.6}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:Georgia,"Iowan Old Style",serif;line-height:1.1;margin:0}
+section{padding:56px 0}
+h2{font-size:clamp(28px,5vw,40px);margin-bottom:12px}
+p{margin:0 0 12px;max-width:62ch}
+.muted{color:var(--muted)}
+/* hero */
+.hero{padding:48px 0 24px;text-align:center}
+.hero h1{font-size:clamp(40px,9vw,76px);letter-spacing:-.02em}
+.hero .sub{margin:16px auto 0;color:var(--muted);font-size:18px;max-width:52ch}
+.stage{margin:32px auto 0;background:var(--surface);border:2px solid var(--ink);border-radius:28px;padding:24px 16px;box-shadow:8px 8px 0 var(--ink);max-width:620px}
+.score{display:flex;justify-content:space-around;gap:8px;margin-bottom:20px}
+.score div{flex:1;border-radius:16px;padding:8px;background:var(--bg)}
+.score b{display:block;font-size:32px;font-family:Georgia,serif}
+.arena{display:flex;align-items:center;justify-content:center;gap:12px;min-height:116px}
+.hand{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;font-size:48px;background:var(--bg);border:2px dashed var(--line)}
+.vs{font-weight:700;color:var(--muted)}
+.hand.pop{animation:pop .35s ease}
+@keyframes pop{from{transform:scale(.6) rotate(-12deg)}to{transform:none}}
+#msg{font-family:Georgia,serif;font-size:26px;min-height:38px;margin:12px 0}
+.picks{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.pick{font:inherit;font-weight:700;color:#1c1b3a;border:2px solid var(--ink);border-radius:18px;padding:12px 16px;min-width:92px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .12s}
+.pick span{font-size:34px;line-height:1.1}
+.pick:hover{transform:translateY(-3px)}
+.pick:focus-visible,.reset:focus-visible,.theme:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.pick[data-c="rock"]{background:var(--rock)}.pick[data-c="paper"]{background:var(--paper)}.pick[data-c="scissors"]{background:var(--scis)}
+.reset{margin-top:16px;font:inherit;background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer}
+.win{color:var(--rock)}.lose{color:var(--scis)}
+.mode{display:inline-flex;border:2px solid var(--ink);border-radius:999px;padding:3px;margin-bottom:18px;background:var(--bg)}
+.mode button{font:inherit;font-weight:700;color:var(--ink);background:none;border:none;border-radius:999px;padding:8px 16px;cursor:pointer}
+.mode button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.mode button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.stage{position:relative;overflow:hidden}
+#rnd{font-weight:700;color:var(--muted);height:24px;margin-bottom:6px}
+#rnd.in{animation:slide .4s ease}
+@keyframes slide{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.hand.shake{animation:shake .15s linear 4}
+@keyframes shake{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-14px) rotate(-8deg)}75%{transform:translateY(8px) rotate(8deg)}}
+.hand.winner{animation:win .8s ease forwards;border:3px solid var(--rock);box-shadow:0 0 0 6px color-mix(in srgb,var(--rock) 25%,transparent)}
+@keyframes win{0%{transform:scale(.7)}40%{transform:scale(1.35) rotate(-6deg)}70%{transform:scale(1.15) rotate(6deg)}100%{transform:scale(1.15)}}
+.hand.loser{opacity:.45;transform:scale(.85);transition:all .3s}
+.hand.tie{animation:tie .5s ease}
+@keyframes tie{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.score b.bump{animation:bump .5s ease}
+@keyframes bump{40%{transform:scale(1.6);color:var(--accent)}}
+.conf{position:absolute;width:10px;height:10px;border-radius:2px;pointer-events:none;animation:fly 1s ease-out forwards}
+@keyframes fly{to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+@media (prefers-reduced-motion:reduce){.hand.shake,.hand.winner,.hand.tie,#rnd.in,.score b.bump{animation:none}.conf{display:none}}
+:root{--c0:#d93b55;--c1:#2c9a58;--c2:#e8b730;--c3:#3a6ee0}
+.tabs{display:inline-flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:22px;border:2px solid var(--ink);border-radius:24px;padding:4px;background:var(--surface)}
+.tabs button{font:inherit;font-weight:700;color:var(--ink);background:none;border:none;border-radius:999px;padding:10px 18px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+.tabs button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#board{position:relative;width:100%;max-width:520px;aspect-ratio:1;margin:4px auto 8px;border:2px solid var(--ink);border-radius:14px;overflow:hidden;background:var(--surface)}
+.cl{position:absolute;border:.5px solid var(--line);display:grid;place-items:center;font-size:clamp(9px,2.6vw,14px);color:var(--muted);line-height:1}
+.yd{position:absolute;width:40%;height:40%;border:2px solid var(--ink);background:color-mix(in srgb,var(--cc) 45%,var(--surface))}
+.sl{position:absolute;width:6.4%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:var(--surface);border:2px solid var(--ink);opacity:.85}
+#ctr{position:absolute;left:40%;top:40%;width:20%;height:20%;border:2px solid var(--ink);background:conic-gradient(from -45deg,var(--c1) 0 25%,var(--c2) 0 50%,var(--c3) 0 75%,var(--c0) 0)}
+.tk{position:absolute;z-index:3;width:5.4%;aspect-ratio:1;padding:0;border-radius:50%;transform:translate(-50%,-50%);border:2px solid var(--ink);background:var(--cc);box-shadow:inset 0 -3px 0 rgba(0,0,0,.28);transition:left .35s,top .35s}
+.tk.can{z-index:4;cursor:pointer;animation:pulse .6s infinite alternate}
+@keyframes pulse{to{transform:translate(-50%,-50%) scale(1.35)}}
+#die{font-size:56px;line-height:1;border:2px solid var(--ink);border-radius:18px;background:var(--surface);color:var(--ink);padding:4px 14px;cursor:pointer}
+#die:disabled{opacity:.5;cursor:default}
+#die.roll{animation:tumble .5s linear}
+@keyframes tumble{to{transform:rotate(720deg)}}
+#die:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+#lmsg{font-family:Georgia,serif;font-size:22px;min-height:34px;margin:6px 0}
+#lstat{font-size:14px;margin-top:10px}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--cc);border:2px solid var(--ink);vertical-align:-1px;margin-right:6px}
+@media (prefers-reduced-motion:reduce){.tk.can,#die.roll{animation:none}.tk{transition:none}}
+/* rules cycle */
+.cycle{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin-top:20px}
+.rule{background:var(--surface);border:2px solid var(--ink);border-radius:20px;padding:18px;text-align:center}
+.rule .e{font-size:30px}.rule b{display:block;margin-top:4px}
+/* features */
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px}
+.card h3{font-size:22px;margin-bottom:6px}.card p{margin:0;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{border:1.5px solid var(--ink);border-radius:999px;padding:4px 14px;font-weight:600;background:var(--surface)}
+pre{background:var(--code);color:var(--codefg);border-radius:20px;padding:20px;overflow-x:auto;font:14px/1.6 ui-monospace,Menlo,Consolas,monospace;margin:20px 0 0;max-width:100%}
+footer{border-top:1px solid var(--line);padding:28px 0 40px;color:var(--muted);font-size:14px}
+.theme{position:fixed;right:14px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:5;border:2px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;width:42px;height:42px;font-size:18px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.hand.pop{animation:none}.pick{transition:none}}
+</style>
+</head>
+<body>
+<button class="theme" id="theme" aria-label="Toggle light or dark mode">◐</button>
+
+<header class="wrap hero">
+  <h1 id="ttl">Rock Paper Scissors</h1>
+  <p class="sub" id="sub">A Python-based interactive game. You pick, the computer picks at random, and the rules decide the winner.</p>
+  <div class="tabs" role="group" aria-label="Choose a game"><button id="t1" aria-pressed="true">🪨 Rock Paper Scissors</button><button id="t2" aria-pressed="false">🎲 Ludo</button></div>
+  <div class="stage" id="rps" aria-live="polite">
+    <div class="mode" role="group" aria-label="Game mode">
+      <button id="m1" aria-pressed="true">vs Computer</button>
+      <button id="m2" aria-pressed="false">2 Players</button>
+    </div>
+    <div class="score">
+      <div><b id="sy">0</b><span id="ly">You</span></div><div><b id="sd">0</b>Draws</div><div><b id="sc">0</b><span id="lc">Computer</span></div>
+    </div>
+    <div id="rnd">Round 1</div>
+    <div class="arena">
+      <div class="hand" id="hy" aria-label="Your choice">?</div>
+      <div class="vs">vs</div>
+      <div class="hand" id="hc" aria-label="Computer choice">?</div>
+    </div>
+    <div id="msg">Choose your move</div>
+    <div class="picks">
+      <button class="pick" data-c="rock"><span>🪨</span>Rock</button>
+      <button class="pick" data-c="paper"><span>📄</span>Paper</button>
+      <button class="pick" data-c="scissors"><span>✂️</span>Scissors</button>
+    </div>
+    <button class="reset" id="reset">Reset score</button>
+  </div>
+  <div class="stage" id="ludo" hidden>
+    <div class="mode" role="group" aria-label="Ludo mode">
+      <button id="lm1" aria-pressed="true">vs Computer</button><button id="lm2" aria-pressed="false">2 Players</button><button id="lm4" aria-pressed="false">4 Players</button>
+    </div>
+    <div id="board" aria-label="Ludo board"></div>
+    <div id="lmsg" aria-live="polite"></div>
+    <button id="die" aria-label="Roll the dice">⚀</button>
+    <div id="lstat" class="muted"></div>
+    <button class="reset" id="lnew">New game</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <h2>The rules</h2>
+    <p class="muted">Rock Paper Scissors is a simple hand game for two players, often used for fun and for making quick decisions. Each choice beats one and loses to another.</p>
+    <div class="cycle">
+      <div class="rule"><div class="e">🪨 → ✂️</div><b>Rock beats Scissors</b></div>
+      <div class="rule"><div class="e">✂️ → 📄</div><b>Scissors beats Paper</b></div>
+      <div class="rule"><div class="e">📄 → 🪨</div><b>Paper beats Rock</b></div>
+    </div>
+    <p style="margin-top:16px">If both players choose the same option, the round is a draw.</p>
+  </section>
+  <section>
+    <h2>Ludo rules</h2>
+    <p class="muted">Ludo is a race game for 2–4 players. Get all four of your tokens around the board and into the centre first.</p>
+    <div class="grid">
+      <div class="card"><h3>Leave the yard</h3><p>Roll a 6 to bring a token onto the board.</p></div>
+      <div class="card"><h3>Roll again</h3><p>A 6, a capture, or a token reaching the centre gives you another turn.</p></div>
+      <div class="card"><h3>Capture</h3><p>Land on a rival to send it back to its yard, unless it’s on a start square or a ★ square.</p></div>
+      <div class="card"><h3>Exact finish</h3><p>A token needs the exact number to reach the centre.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>About the project</h2>
+    <p>This project is a command-line game written in Python. The user types a choice, the computer picks randomly, and the result of each round is shown right away.</p>
+    <div class="grid">
+      <div class="card"><h3>Random computer</h3><p>Python’s built-in random module picks Rock, Paper or Scissors for the computer.</p></div>
+      <div class="card"><h3>Input validation</h3><p>The game checks every entry and asks again if the choice isn’t valid.</p></div>
+      <div class="card"><h3>Multiple rounds</h3><p>Players can keep playing, and the game tracks the score across rounds.</p></div>
+      <div class="card"><h3>Simple interface</h3><p>A plain command-line interface keeps the focus on the game logic.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What it teaches</h2>
+    <p class="muted">The game is a small, real example of core Python programming ideas.</p>
+    <div class="chips">
+      <span class="chip">Variables</span><span class="chip">Conditional statements</span><span class="chip">Loops</span><span class="chip">Functions</span><span class="chip">Modules</span><span class="chip">Random numbers</span><span class="chip">User input</span><span class="chip">Decision-making logic</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>The core logic</h2>
+    <p class="muted">A short example of how the game could work in Python.</p>
+<pre><code>import random
+
+choices = ["rock", "paper", "scissors"]
+beats = {"rock": "scissors", "scissors": "paper", "paper": "rock"}
+user_score = computer_score = 0
+
+while True:
+    user = input("Rock, paper or scissors? (q to quit): ").lower()
+    if user == "q":
+        break
+    if user not in choices:
+        print("Please enter rock, paper or scissors.")
+        continue
+
+    computer = random.choice(choices)
+    print(f"Computer chose {computer}.")
+
+    if user == computer:
+        print("It's a draw!")
+    elif beats[user] == computer:
+        print("You win this round!")
+        user_score += 1
+    else:
+        print("Computer wins this round.")
+        computer_score += 1
+
+    print(f"Score: You {user_score} – Computer {computer_score}")</code></pre>
+  </section>
+</main>
+
+<footer class="wrap">
+  Keywords: Python, Rock Paper Scissors, Computer Game, Random Module, User Input, Conditional Statements, Command-Line Application, Game Logic.
+</footer>
+
+<script>
+(function(){
+  var E={rock:"🪨",paper:"📄",scissors:"✂️"},B={rock:"scissors",scissors:"paper",paper:"rock"},K=["rock","paper","scissors"];
+  var s={y:0,d:0,c:0},$=function(i){return document.getElementById(i)};
+  function show(el,c){el.className="hand";el.textContent=E[c]}
+  var mode="cpu",p1=null,busy=false,rounds=0;
+  function ask(){var m=$("msg");m.className="";m.textContent=mode==="cpu"?"Choose your move":(p1?"Player 2, choose your move":"Player 1, choose your move")}
+  function clearAll(){s={y:0,d:0,c:0};p1=null;rounds=0;busy=false;$("rnd").textContent="Round 1";$("hy").className="hand";$("hc").className="hand";["sy","sd","sc"].forEach(function(i){$(i).textContent=0});$("hy").textContent="?";$("hc").textContent="?";ask()}
+  function setMode(x){mode=x;$("m1").setAttribute("aria-pressed",x==="cpu");$("m2").setAttribute("aria-pressed",x==="two");
+    $("ly").textContent=x==="cpu"?"You":"Player 1";$("lc").textContent=x==="cpu"?"Computer":"Player 2";clearAll()}
+  function confetti(el){var st=document.querySelector(".stage"),a=st.getBoundingClientRect(),b=el.getBoundingClientRect(),cols=["--rock","--paper","--scis","--accent"];
+    for(var i=0;i<26;i++){var d=document.createElement("i"),g=Math.random()*6.28,k=70+Math.random()*90;d.className="conf";
+      d.style.left=(b.left-a.left+b.width/2)+"px";d.style.top=(b.top-a.top+b.height/2)+"px";d.style.background="var("+cols[i%4]+")";
+      d.style.setProperty("--x",Math.cos(g)*k+"px");d.style.setProperty("--y",Math.sin(g)*k+"px");d.style.setProperty("--r",Math.random()*720+"deg");
+      st.appendChild(d);setTimeout((function(n){return function(){n.remove()}})(d),1000)}}
+  function reveal(a,c){busy=true;rounds++;var r=$("rnd"),y=$("hy"),h=$("hc"),m=$("msg");
+    r.textContent="Round "+rounds;r.classList.remove("in");void r.offsetWidth;r.classList.add("in");
+    y.className=h.className="hand shake";y.textContent=h.textContent=E.rock;m.className="";m.textContent="Rock, paper, scissors…";
+    setTimeout(function(){show(y,a);show(h,c);result(a,c);busy=false},650)}
+  function result(u,c){var m=$("msg"),two=mode==="two",y=$("hy"),h=$("hc"),w;
+    if(u===c){w="d";s.d++;m.textContent="It’s a draw!";m.className="";y.className=h.className="hand tie"}
+    else if(B[u]===c){w="y";s.y++;m.textContent=two?"Player 1 wins this round!":"You win this round!";m.className="win";y.className="hand winner";h.className="hand loser"}
+    else{w="c";s.c++;m.textContent=two?"Player 2 wins this round!":"Computer wins this round";m.className=two?"win":"lose";h.className="hand winner";y.className="hand loser"}
+    $("sy").textContent=s.y;$("sd").textContent=s.d;$("sc").textContent=s.c;
+    var sb=$("s"+w);sb.classList.remove("bump");void sb.offsetWidth;sb.classList.add("bump");
+    if(w==="y"||(w==="c"&&two))confetti(w==="y"?y:h)}
+  document.querySelectorAll(".pick").forEach(function(b){b.addEventListener("click",function(){
+    if(busy)return;var u=b.dataset.c;
+    if(mode==="cpu"){reveal(u,K[Math.floor(Math.random()*3)]);return}
+    if(!p1){p1=u;$("hy").className=$("hc").className="hand";$("hy").textContent="🔒";$("hc").textContent="?";ask();return}
+    var a=p1;p1=null;reveal(a,u);
+  })});
+  $("m1").addEventListener("click",function(){setMode("cpu")});
+  $("m2").addEventListener("click",function(){setMode("two")});
+  $("reset").addEventListener("click",clearAll);
+  $("theme").addEventListener("click",function(){
+    var r=document.documentElement,d=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+    r.dataset.theme=d?"light":"dark";
+  });
+})();
+</script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},bd=$('board'),W=100/15;
+var P=[],SEG=[[6,1,0,1,5],[5,6,-1,0,6],[0,7,0,1,2],[1,8,1,0,5],[6,9,0,1,6],[7,14,1,0,2],[8,13,0,-1,5],[9,8,1,0,6],[14,7,0,-1,2],[13,6,-1,0,5],[8,5,0,-1,6],[7,0,-1,0,2]];
+SEG.forEach(function(s){for(var k=0;k<s[4];k++)P.push([s[0]+s[2]*k,s[1]+s[3]*k])});
+var ST=[0,13,26,39],SAFE={},NM=['Red','Green','Yellow','Blue'],HC=[[7,1,0,1],[1,7,1,0],[7,13,0,-1],[13,7,-1,0]],
+YS=[[[1,1],[1,4],[4,1],[4,4]],[[1,10],[1,13],[4,10],[4,13]],[[10,10],[10,13],[13,10],[13,13]],[[10,1],[10,4],[13,1],[13,4]]];
+ST.forEach(function(a){SAFE[a]=1;SAFE[(a+8)%52]=1});
+var pos,act,cpu,t,v,st,over,mv=[],tk={},gid=0,cur=['lm1',2,1];
+function later(f,ms){var g=gid;setTimeout(function(){if(g===gid)f()},ms)}
+function cell(r,c,col,txt){var d=document.createElement('div');d.className='cl';
+  d.style.cssText='left:'+c*W+'%;top:'+r*W+'%;width:'+W+'%;height:'+W+'%'+(col>=0?';background:color-mix(in srgb,var(--c'+col+') 55%,var(--surface))':'');d.textContent=txt;bd.appendChild(d)}
+function slot(r,c){var d=document.createElement('div');d.className='sl';d.style.left=(c+.5)*W+'%';d.style.top=(r+.5)*W+'%';bd.appendChild(d)}
+function build(){bd.innerHTML='';
+  for(var c=0;c<4;c++){var y=document.createElement('div');y.className='yd';y.style.cssText='--cc:var(--c'+c+');left:'+[0,60,60,0][c]+'%;top:'+[0,0,60,60][c]+'%';bd.appendChild(y);YS[c].forEach(function(s){slot(s[0],s[1])})}
+  var z=document.createElement('div');z.id='ctr';bd.appendChild(z);
+  P.forEach(function(p,i){var s=ST.indexOf(i);cell(p[0],p[1],s,SAFE[i]&&s<0?'★':'')});
+  for(c=0;c<4;c++)for(var k=0;k<5;k++)cell(HC[c][0]+HC[c][2]*k,HC[c][1]+HC[c][3]*k,c,'')}
+function xy(c,i){var p=pos[c][i];if(p<0)return YS[c][i];if(p<=50)return P[(ST[c]+p)%52];if(p<56)return [HC[c][0]+HC[c][2]*(p-51),HC[c][1]+HC[c][3]*(p-51)];return [7+[0,-.7,0,.7][c],7+[-.7,0,.7,0][c]]}
+function render(){var g={};act.forEach(function(c){for(var i=0;i<4;i++){var q=xy(c,i),key=q[0]+','+q[1],k=g[key]=(g[key]==null?0:g[key]+1),b=tk[c+'-'+i];
+  b.style.left=(q[1]+.5+k*.2)*W+'%';b.style.top=(q[0]+.5-k*.1)*W+'%';b.classList.toggle('can',st==='pick'&&c===act[t]&&mv.indexOf(i)>-1)}});
+  $('lstat').textContent=act.map(function(c){return NM[c]+' '+pos[c].filter(function(p){return p===56}).length+'/4'}).join('  ·  ')}
+function info(){var c=act[t];$('lmsg').innerHTML='<span class="dot" style="--cc:var(--c'+c+')"></span>'+NM[c]+'’s turn'+(cpu[c]?' (computer)':' — roll the dice');$('die').disabled=!!cpu[c]||st!=='roll'}
+function hit(c,n){var r=[];if(n<0||n>50)return r;var a=(ST[c]+n)%52;if(SAFE[a])return r;
+  act.forEach(function(o){if(o!==c)pos[o].forEach(function(q,j){if(q>=0&&q<=50&&(ST[o]+q)%52===a)r.push([o,j])})});return r}
+function best(c){var b=mv[0],bs=-1;mv.forEach(function(i){var p=pos[c][i],n=p<0?0:p+v,s=(n===56?100:0)+(hit(c,n).length?60:0)+(p<0?30:0)+n;if(s>bs){bs=s;b=i}});return b}
+function next(){t=(t+1)%act.length;st='roll';info();render();maybeCpu()}
+function maybeCpu(){if(cpu[act[t]]&&!over)later(roll,800)}
+function roll(){if(st!=='roll'||over)return;st='busy';var d=$('die'),c=act[t];d.disabled=true;d.classList.add('roll');
+  later(function(){d.classList.remove('roll');v=1+Math.floor(Math.random()*6);d.textContent='⚀⚁⚂⚃⚄⚅'[v-1];
+    mv=[0,1,2,3].filter(function(i){var p=pos[c][i];return p<0?v===6:p+v<=56});
+    if(!mv.length){$('lmsg').textContent=NM[c]+' rolled '+v+' — no move';return later(next,1000)}
+    if(cpu[c]||mv.length===1){var i=cpu[c]?best(c):mv[0];return later(function(){move(c,i)},cpu[c]?700:450)}
+    st='pick';$('lmsg').textContent='You rolled '+v+' — tap a glowing token';render()},500)}
+function move(c,i){st='busy';mv=[];var p=pos[c][i],n=p<0?0:p+v;pos[c][i]=n;var h=hit(c,n);h.forEach(function(x){pos[x[0]][x[1]]=-1});render();
+  if(pos[c].every(function(q){return q===56})){over=true;$('lmsg').textContent='🏆 '+NM[c]+' wins!';return}
+  if(h.length)$('lmsg').textContent=NM[c]+' captured a token!';
+  var more=v===6||h.length||n===56;
+  later(function(){if(more){st='roll';info();render();maybeCpu()}else next()},800)}
+function start(){gid++;var n=cur[1];act=n===4?[0,1,2,3]:[0,2];cpu={};if(cur[2])cpu[2]=1;pos=[[],[],[],[]];over=false;t=0;st='roll';v=0;mv=[];
+  act.forEach(function(c){pos[c]=[-1,-1,-1,-1]});build();tk={};
+  act.forEach(function(c){for(var i=0;i<4;i++)(function(c,i){var b=document.createElement('button');b.className='tk';b.style.setProperty('--cc','var(--c'+c+')');
+    b.setAttribute('aria-label',NM[c]+' token '+(i+1));b.onclick=function(){if(st==='pick'&&c===act[t]&&mv.indexOf(i)>-1)move(c,i)};bd.appendChild(b);tk[c+'-'+i]=b})(c,i)});
+  ['lm1','lm2','lm4'].forEach(function(id){$(id).setAttribute('aria-pressed',id===cur[0])});
+  $('die').textContent='⚀';render();info();maybeCpu()}
+[['lm1',2,1],['lm2',2,0],['lm4',4,0]].forEach(function(m){$(m[0]).onclick=function(){cur=m;start()}});
+$('lnew').onclick=start;
+$('die').onclick=function(){if(!cpu[act[t]])roll()};
+function tab(x){var r=x==='rps';$('rps').hidden=!r;$('ludo').hidden=r;$('t1').setAttribute('aria-pressed',r);$('t2').setAttribute('aria-pressed',!r);
+  $('ttl').textContent=r?'Rock Paper Scissors':'Ludo';
+  $('sub').textContent=r?'A Python-based interactive game. You pick, the computer picks at random, and the rules decide the winner.':'Race all four tokens home. Roll a 6 to leave the yard, and capture rivals to send them back.'}
+$('t1').onclick=function(){tab('rps')};$('t2').onclick=function(){tab('ludo')};
+start();
+})();
+</script>
+</body>
+</html>
